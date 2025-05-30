@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>賽馬計算器</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f7f9fc;
+      padding: 30px;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 30px auto;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 14px 20px;
+      text-align: center;
+      border-bottom: 1px solid #e1e8ed;
+      font-size: 16px;
+    }
+    th {
+      background-color: #3498db;
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    input[type="number"] {
+      width: 100px;
+      padding: 8px 10px;
+      border: 1.5px solid #3498db;
+      border-radius: 6px;
+      font-size: 16px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #2980b9;
+      box-shadow: 0 0 6px #2980b9;
+    }
+    select {
+      padding: 8px 14px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1.5px solid #3498db;
+      margin-left: 10px;
+      vertical-align: middle;
+      transition: border-color 0.3s;
+    }
+    select:focus {
+      outline: none;
+      border-color: #2980b9;
+      box-shadow: 0 0 6px #2980b9;
+    }
+    .result-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px 25px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      font-size: 17px;
+      line-height: 1.5;
+      color: #2c3e50;
+      white-space: pre-line;
+    }
+    label {
+      font-weight: 600;
+      font-size: 17px;
+      color: #34495e;
+    }
+    @media (max-width: 640px) {
+      input[type="number"], select {
+        width: 80px;
+        font-size: 14px;
+      }
+      th, td {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>賽馬計算器 (1-8號馬)</h2>
+  <p style="text-align:center; max-width:600px; margin:auto;">
+    請輸入每匹馬的投注金額 (單位：萬)，系統會顯示每匹馬的賠率<br>
+    賽事抽水為20%，其中10%給騎手
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>馬號</th>
+        <th>投注金額 (萬)</th>
+        <th>賠率 (倍)</th>
+      </tr>
+    </thead>
+    <tbody id="bet-table">
+      <script>
+        for (let i = 1; i <= 8; i++) {
+          document.write(`
+            <tr>
+              <td>${i}</td>
+              <td><input type="number" min="0" value="0" id="bet-${i}" onchange="calculateOdds()" /></td>
+              <td id="odds-${i}">-</td>
+            </tr>
+          `);
+        }
+      </script>
+    </tbody>
+  </table>
+
+  <div style="text-align:center; margin-bottom: 40px;">
+    <label for="winner">選擇贏家馬號：</label>
+    <select id="winner" onchange="calculateOdds()">
+      <script>
+        for (let i = 1; i <= 8; i++) {
+          document.write(`<option value="${i}">${i}</option>`);
+        }
+      </script>
+    </select>
+  </div>
+
+  <div class="result-container" id="result"></div>
+
+  <script>
+    function calculateOdds() {
+      const totalBets = [];
+      let totalPool = 0;
+
+      for (let i = 1; i <= 8; i++) {
+        const bet = parseFloat(document.getElementById(`bet-${i}`).value) || 0;
+        totalBets[i] = bet;
+        totalPool += bet;
+      }
+
+      const totalTakeout = totalPool * 0.20; // 20%抽水
+      const jockeyTake = totalPool * 0.10;   // 10%給騎手
+      const otherTake = totalTakeout - jockeyTake; // 其他抽水10%
+      const poolAfterTakeout = totalPool - totalTakeout; // 扣除20%後的獎池
+
+      const winner = parseInt(document.getElementById("winner").value);
+
+      // 計算每匹馬的賠率
+      for (let i = 1; i <= 8; i++) {
+        let oddsText = '-';
+        if (totalBets[i] > 0) {
+          oddsText = (poolAfterTakeout / totalBets[i]).toFixed(2);
+        } else if (totalPool > 0) {
+          oddsText = '∞';
+        }
+        document.getElementById(`odds-${i}`).innerText = oddsText;
+      }
+
+      // 顯示摘要資訊
+      let summary = `總投注金額：${totalPool.toFixed(2)} 萬\n`;
+      summary += `總抽水 (20%)：${totalTakeout.toFixed(2)} 萬\n`;
+      summary += `　其中騎手分成 (10%)：${jockeyTake.toFixed(2)} 萬\n`;
+      summary += `　其他抽水 (10%)：${otherTake.toFixed(2)} 萬\n`;
+      summary += `抽水後獎池：${poolAfterTakeout.toFixed(2)} 萬\n\n`;
+      summary += `選擇贏家馬號：${winner}\n`;
+      summary += `贏家賠率：${totalBets[winner] > 0 ? (poolAfterTakeout / totalBets[winner]).toFixed(2) : '0'} 倍`;
+
+      document.getElementById("result").innerText = summary;
+    }
+
+    calculateOdds();
+  </script>
+</body>
+</html>
